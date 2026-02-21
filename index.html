@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Choose</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #c0392b;
+      --blue: #2980b9;
+      --dim: #888;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #000;
+      color: #ccc;
+      font-family: 'Share Tech Mono', monospace;
+      overflow: hidden;
+    }
+
+    /* Matrix rain canvas sits behind everything */
+    #rain {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      opacity: 0.18;
+    }
+
+    /* ── CHOICE SCREEN ── */
+    #choice {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3rem;
+      transition: opacity .6s;
+    }
+
+    .headline {
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .headline h1 {
+      font-size: clamp(1.1rem, 3vw, 1.6rem);
+      color: #eee;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .headline p {
+      margin-top: .8rem;
+      font-size: clamp(.7rem, 1.8vw, .9rem);
+      color: var(--dim);
+      letter-spacing: .08em;
+      max-width: 440px;
+    }
+
+    .pills {
+      display: flex;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .pill {
+      cursor: pointer;
+      border: none;
+      outline: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      transition: transform .2s;
+    }
+
+    .pill:hover { transform: scale(1.06); }
+    .pill:active { transform: scale(.97); }
+
+    .pill-capsule {
+      width: 56px;
+      height: 120px;
+      border-radius: 28px;
+      position: relative;
+      box-shadow: 0 0 32px -4px currentColor, inset 0 0 18px rgba(0,0,0,.5);
+    }
+
+    /* shiny highlight */
+    .pill-capsule::after {
+      content: '';
+      position: absolute;
+      top: 12px; left: 14px;
+      width: 16px; height: 38px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.22);
+      transform: rotate(-12deg);
+    }
+
+    .pill-red  .pill-capsule { background: var(--red);  color: var(--red); }
+    .pill-blue .pill-capsule { background: var(--blue); color: var(--blue); }
+
+    .pill-label {
+      font-size: .75rem;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+
+    .pill-red:hover  .pill-label { color: var(--red); }
+    .pill-blue:hover .pill-label { color: var(--blue); }
+
+    .divider {
+      font-size: 1.2rem;
+      color: #333;
+      letter-spacing: .1em;
+    }
+
+    .footnote {
+      font-size: .65rem;
+      color: #333;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    /* ── REVEAL SCREEN ── */
+    #reveal {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      opacity: 0;
+      transition: opacity .5s;
+    }
+
+    #reveal.show {
+      display: flex;
+    }
+
+    #reveal.visible {
+      opacity: 1;
+    }
+
+    #reveal-gif {
+      max-width: min(520px, 90vw);
+      max-height: 60vh;
+      border-radius: 8px;
+      image-rendering: auto;
+    }
+
+    #reveal-text {
+      font-size: clamp(.7rem, 2vw, 1rem);
+      color: #aaa;
+      text-align: center;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    #back-btn {
+      margin-top: .5rem;
+      background: transparent;
+      border: 1px solid #333;
+      color: #555;
+      font-family: inherit;
+      font-size: .7rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: .5rem 1.4rem;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: border-color .2s, color .2s;
+    }
+
+    #back-btn:hover { border-color: #888; color: #aaa; }
+  </style>
+</head>
+<body>
+
+<canvas id="rain"></canvas>
+
+<!-- CHOICE -->
+<section id="choice">
+  <div class="headline">
+    <h1>This is your last chance.</h1>
+    <p>After this, there is no turning back. You take the blue pill — the story ends. You take the red pill — you stay in Wonderland.</p>
+  </div>
+
+  <div class="pills">
+    <button class="pill pill-red" onclick="choose('red')">
+      <div class="pill-capsule"></div>
+      <span class="pill-label">Red Pill</span>
+    </button>
+
+    <span class="divider">or</span>
+
+    <button class="pill pill-blue" onclick="choose('blue')">
+      <div class="pill-capsule"></div>
+      <span class="pill-label">Blue Pill</span>
+    </button>
+  </div>
+
+  <p class="footnote">Remember — all I'm offering is the truth.</p>
+</section>
+
+<!-- REVEAL -->
+<section id="reveal">
+  <img id="reveal-gif" src="" alt="truth" />
+  <p id="reveal-text"></p>
+  <button id="back-btn" onclick="goBack()">&#8592; Choose again</button>
+</section>
+
+<script>
+  /* ── Matrix rain ── */
+  const canvas = document.getElementById('rain');
+  const ctx = canvas.getContext('2d');
+  let cols, drops;
+
+  function initRain() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const fontSize = 14;
+    cols = Math.floor(canvas.width / fontSize);
+    drops = Array(cols).fill(1);
+  }
+
+  function drawRain() {
+    ctx.fillStyle = 'rgba(0,0,0,.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#0f0';
+    ctx.font = '14px Share Tech Mono, monospace';
+
+    for (let i = 0; i < drops.length; i++) {
+      const char = String.fromCharCode(0x30A0 + Math.random() * 96);
+      ctx.fillText(char, i * 14, drops[i] * 14);
+      if (drops[i] * 14 > canvas.height && Math.random() > .975) drops[i] = 0;
+      drops[i]++;
+    }
+  }
+
+  initRain();
+  window.addEventListener('resize', initRain);
+  setInterval(drawRain, 50);
+
+  /* ── Pill choice ── */
+  function choose(pill) {
+    const choiceEl = document.getElementById('choice');
+    const revealEl = document.getElementById('reveal');
+    const gif      = document.getElementById('reveal-gif');
+    const text     = document.getElementById('reveal-text');
+
+    const isRed = pill === 'red';
+    gif.src  = isRed ? 'sonic-x-knuckle-humping.gif' : 'knuckle-x-sonic-humping.gif';
+    text.textContent = isRed
+      ? 'Welcome to the real world.'
+      : 'Ignorance is bliss.';
+
+    // fade out choice
+    choiceEl.style.opacity = '0';
+    choiceEl.style.pointerEvents = 'none';
+
+    setTimeout(() => {
+      choiceEl.style.display = 'none';
+      revealEl.classList.add('show');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => revealEl.classList.add('visible'));
+      });
+    }, 600);
+  }
+
+  function goBack() {
+    const choiceEl = document.getElementById('choice');
+    const revealEl = document.getElementById('reveal');
+
+    revealEl.classList.remove('visible');
+    setTimeout(() => {
+      revealEl.classList.remove('show');
+      choiceEl.style.display = '';
+      choiceEl.style.opacity = '0';
+      choiceEl.style.pointerEvents = '';
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => { choiceEl.style.opacity = '1'; });
+      });
+    }, 500);
+  }
+</script>
+</body>
+</html>
